@@ -28,8 +28,6 @@ const importPublicModule = (filename) => {
 
 const publicAssetUrl = (filename) => new URL(filename, document.baseURI).href;
 
-const mobileHeroImage = "mob-1a8281b2-eeac-444e-82c6-7f5080d55d7f.png";
-const mobileHeroImageSrc = `${mobileHeroImage}?v=mobile-direct-v1`;
 const mobileSceneQuery =
   "(max-width: 760px), (pointer: coarse) and (orientation: portrait)";
 
@@ -40,12 +38,53 @@ export default function Home() {
   const canvasRef = useRef(null);
   const pageRef = useRef(null);
   const runtimeRef = useRef(null);
+  const heroPointerRef = useRef(null);
+  const suppressNextClickRef = useRef(false);
+
+  const handleHeroPointerDown = (event) => {
+    heroPointerRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+    };
+  };
+
+  const handleHeroPointerMove = (event) => {
+    const pointer = heroPointerRef.current;
+    if (!pointer) return;
+
+    const distance = Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y);
+    pointer.moved = pointer.moved || distance > 12;
+  };
+
+  const handleHeroPointerUp = () => {
+    suppressNextClickRef.current = heroPointerRef.current?.moved ?? false;
+    heroPointerRef.current = null;
+  };
+
+  const handleHeroClick = () => {
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      return;
+    }
+
+    setIsOpen(true);
+  };
+
+  const handleHeroKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setIsOpen(true);
+    }
+  };
 
   useEffect(() => {
     const media = window.matchMedia(mobileSceneQuery);
     const updateSceneDataFile = () => {
       setIsMobileHero(media.matches);
-      setSceneDataFile(media.matches ? null : "hana-scene-data.mjs");
+      setSceneDataFile(
+        media.matches ? "hana-scene-data-mobile.mjs" : "hana-scene-data.mjs",
+      );
     };
 
     updateSceneDataFile();
@@ -120,22 +159,25 @@ export default function Home() {
         className={`spline-splash${isOpen ? " is-hidden" : ""}`}
         aria-label="Interactive hero"
       >
-        {isMobileHero ? (
-          <img
-            className="mobile-hero-image"
-            src={mobileHeroImageSrc}
-            alt=""
-            aria-hidden="true"
-            onClick={() => setIsOpen(true)}
-          />
-        ) : (
-          <canvas
-            ref={canvasRef}
-            className="spline-canvas"
-            aria-label="Interactive Spline hero"
-            onClick={() => setIsOpen(true)}
-          />
-        )}
+        <canvas
+          ref={canvasRef}
+          className="spline-canvas"
+          aria-label={
+            isMobileHero
+              ? "Interactive mobile Spline hero"
+              : "Interactive Spline hero"
+          }
+          tabIndex={0}
+          onPointerDown={handleHeroPointerDown}
+          onPointerMove={handleHeroPointerMove}
+          onPointerUp={handleHeroPointerUp}
+          onPointerCancel={() => {
+            heroPointerRef.current = null;
+            suppressNextClickRef.current = true;
+          }}
+          onClick={handleHeroClick}
+          onKeyDown={handleHeroKeyDown}
+        />
       </section>
 
       <main
