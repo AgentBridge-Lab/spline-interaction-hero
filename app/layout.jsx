@@ -5,6 +5,12 @@ export const metadata = {
   description: "A clean Spline hero splash that opens a simple web page on click.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">

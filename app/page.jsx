@@ -28,10 +28,14 @@ const importPublicModule = (filename) => {
 
 const publicAssetUrl = (filename) => new URL(filename, document.baseURI).href;
 
-const mobileSceneQuery = "(max-width: 760px)";
+const mobileHeroImage = "mob-1a8281b2-eeac-444e-82c6-7f5080d55d7f.png";
+const mobileHeroImageSrc = `${mobileHeroImage}?v=mobile-direct-v1`;
+const mobileSceneQuery =
+  "(max-width: 760px), (pointer: coarse) and (orientation: portrait)";
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobileHero, setIsMobileHero] = useState(false);
   const [sceneDataFile, setSceneDataFile] = useState(null);
   const canvasRef = useRef(null);
   const pageRef = useRef(null);
@@ -40,9 +44,8 @@ export default function Home() {
   useEffect(() => {
     const media = window.matchMedia(mobileSceneQuery);
     const updateSceneDataFile = () => {
-      setSceneDataFile(
-        media.matches ? "hana-scene-data-mobile.mjs" : "hana-scene-data.mjs",
-      );
+      setIsMobileHero(media.matches);
+      setSceneDataFile(media.matches ? null : "hana-scene-data.mjs");
     };
 
     updateSceneDataFile();
@@ -68,7 +71,11 @@ export default function Home() {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!sceneDataFile) return undefined;
+    if (!sceneDataFile) {
+      runtimeRef.current?.dispose();
+      runtimeRef.current = null;
+      return undefined;
+    }
 
     let isDisposed = false;
 
@@ -113,12 +120,22 @@ export default function Home() {
         className={`spline-splash${isOpen ? " is-hidden" : ""}`}
         aria-label="Interactive hero"
       >
-        <canvas
-          ref={canvasRef}
-          className="spline-canvas"
-          aria-label="Interactive Spline hero"
-          onClick={() => setIsOpen(true)}
-        />
+        {isMobileHero ? (
+          <img
+            className="mobile-hero-image"
+            src={mobileHeroImageSrc}
+            alt=""
+            aria-hidden="true"
+            onClick={() => setIsOpen(true)}
+          />
+        ) : (
+          <canvas
+            ref={canvasRef}
+            className="spline-canvas"
+            aria-label="Interactive Spline hero"
+            onClick={() => setIsOpen(true)}
+          />
+        )}
       </section>
 
       <main
